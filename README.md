@@ -2,7 +2,16 @@
 
 A self-contained conversational analytics demo that showcases the future of data exploration through natural language. This project demonstrates how users can ask questions in plain English and receive intelligent insights with visualizations — all running entirely in the browser.
 
-![Conversational Analytics](https://img.shields.io/badge/React-18.2-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue) ![Vite](https://img.shields.io/badge/Vite-5.0-purple)
+## 🛠️ Tech Stack
+
+<div align="center">
+
+![React](https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg)
+![TypeScript](https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg)
+![Vite](https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vitejs/vitejs-original.svg)
+![Tailwind CSS](https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg)
+
+</div>
 
 ## 🌟 Features
 
@@ -266,7 +275,223 @@ This project is inspired by the blog post *"Beyond dashboards: why the future of
 - [Recharts](https://recharts.org/) for simple charting
 - [Vite](https://vitejs.dev/) for blazing fast development
 
+## 🤖 Integrera med AI Agents
+
+### Alternativ 1: n8n Integration
+
+[n8n](https://n8n.io/) är en workflow automation-plattform som kan kopplas till olika LLM-tjänster.
+
+#### Steg för att integrera:
+
+1. **Sätt upp n8n**
+   ```bash
+   npx n8n
+   ```
+
+2. **Skapa ett workflow med följande noder:**
+   - **Webhook Trigger**: Ta emot frågor från frontend
+   - **HTTP Request**: Hämta data från din databackend
+   - **LLM Node**: Välj mellan:
+     - OpenAI (GPT-4, GPT-3.5)
+     - Anthropic Claude
+     - Groq (ultra-snabb inferens med Llama, Mixtral)
+     - Azure OpenAI
+     - Google PaLM
+   - **Code Node**: Formatera svar och skapa chartData
+   - **Respond to Webhook**: Returnera strukturerat svar
+
+3. **Konfigurera LLM-node för Groq (rekommenderat för låg latens)**
+   ```javascript
+   // I n8n Code node
+   const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+     method: 'POST',
+     headers: {
+       'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+       'Content-Type': 'application/json'
+     },
+     body: JSON.stringify({
+       model: 'llama-3.1-70b-versatile', // eller mixtral-8x7b-32768
+       messages: [
+         {
+           role: 'system',
+           content: 'Du är en dataanalytiker som svarar på frågor om försäljningsdata...'
+         },
+         {
+           role: 'user',
+           content: userQuery
+         }
+       ],
+       temperature: 0.7
+     })
+   });
+   ```
+
+4. **Anpassa frontend för att anropa n8n webhook**
+   ```typescript
+   // I engine.ts
+   async function askAgent(query: string): Promise<InsightResult> {
+     const response = await fetch('https://your-n8n-instance.com/webhook/analytics', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({ 
+         query, 
+         data: salesData // Skicka kontext om behövs
+       })
+     });
+     return await response.json();
+   }
+   ```
+
+### Alternativ 2: LangChain + LangGraph (LangSmith)
+
+[LangChain](https://build.langchain.com/) erbjuder en kraftfull plattform för att bygga LLM-agenter med observability.
+
+#### Sätt upp LangChain Agent:
+
+1. **Installera dependencies**
+   ```bash
+   npm install langchain @langchain/openai @langchain/anthropic @langchain/groq
+   ```
+
+2. **Skapa en agent med verktyg**
+   ```typescript
+   import { ChatGroq } from "@langchain/groq";
+   import { DynamicStructuredTool } from "langchain/tools";
+   import { AgentExecutor, createOpenAIFunctionsAgent } from "langchain/agents";
+   
+   // Definiera verktyg för dataanalys
+   const analyzeSalesTool = new DynamicStructuredTool({
+     name: "analyze_sales_data",
+     description: "Analyserar försäljningsdata baserat på filter och returnerar insights",
+     schema: z.object({
+       country: z.string().optional(),
+       segment: z.string().optional(),
+       dateRange: z.string().optional(),
+     }),
+     func: async ({ country, segment, dateRange }) => {
+       // Din befintliga engine-logik här
+       const result = await analyzeData(country, segment, dateRange);
+       return JSON.stringify(result);
+     },
+   });
+   
+   // Skapa agent med Groq (snabbast)
+   const llm = new ChatGroq({
+     apiKey: process.env.GROQ_API_KEY,
+     model: "llama-3.1-70b-versatile",
+     temperature: 0.7,
+   });
+   
+   const agent = await createOpenAIFunctionsAgent({
+     llm,
+     tools: [analyzeSalesTool],
+     prompt: systemPrompt,
+   });
+   
+   const agentExecutor = new AgentExecutor({
+     agent,
+     tools: [analyzeSalesTool],
+   });
+   
+   // Använd agenten
+   const response = await agentExecutor.invoke({
+     input: "Varför sjönk försäljningen i Tyskland?"
+   });
+   ```
+
+3. **Integrera med LangSmith för monitoring**
+   ```bash
+   export LANGCHAIN_TRACING_V2=true
+   export LANGCHAIN_API_KEY=your_langsmith_key
+   export LANGCHAIN_PROJECT=conversational-analytics
+   ```
+
+4. **Bygg agent med LangGraph för mer kontroll**
+   ```typescript
+   import { StateGraph } from "@langchain/langgraph";
+   
+   // Definiera agent state
+   interface AgentState {
+     query: string;
+     data: any[];
+     insights: string;
+     chartData?: any;
+   }
+   
+   // Skapa graph med noder
+   const graph = new StateGraph<AgentState>({
+     channels: {
+       query: null,
+       data: null,
+       insights: null,
+       chartData: null,
+     }
+   })
+     .addNode("fetch_data", fetchDataNode)
+     .addNode("analyze", analyzeNode)
+     .addNode("generate_chart", chartNode)
+     .addEdge("fetch_data", "analyze")
+     .addEdge("analyze", "generate_chart");
+   
+   const app = graph.compile();
+   ```
+
+### Rekommenderade LLM-modeller via Groq
+
+[Groq](https://groq.com/) erbjuder extremt snabb inferens (perfekt för konversations-UI):
+
+- **Llama 3.1 70B**: Bäst balans mellan prestanda och hastighet
+- **Llama 3.1 8B**: Snabbast, bra för enklare queries
+- **Mixtral 8x7B**: Utmärkt för reasoning och komplexa analyser
+- **Gemma 2 9B**: Google-modell, bra för kodgenerering
+
+#### Groq API Exempel:
+```typescript
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+
+async function queryGroq(question: string, context: string) {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'llama-3.1-70b-versatile',
+      messages: [
+        {
+          role: 'system',
+          content: `Du är en expert på dataanalys. Analysera försäljningsdata och ge konkreta insights.
+                    
+                    Tillgänglig data: ${context}
+                    
+                    Svara alltid med:
+                    1. En tydlig förklaring
+                    2. Relevanta siffror
+                    3. JSON för chart om relevant: { type: "line|bar", data: [...] }`
+        },
+        {
+          role: 'user',
+          content: question
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 2000,
+    }),
+  });
+  
+  return await response.json();
+}
+```
+
+### Jämförelse av ansatser
+
+| Metod | Fördelar | Nackdelar | Bäst för |
+|-------|----------|-----------|----------|
+| **n8n** | Visuell workflow, många integrationer, self-hosted | Kräver separat server | Snabb prototyping, no-code teams |
+| **LangChain** | Kraftfull, mycket kontroll, bra verktygsekosystem | Mer kod, steeper learning curve | Produktionssystem, komplexa agents |
+| **Groq API direkt** | Extremt snabb latens, enkel integration | Färre features än full agent framework | Real-time conversational UI |
+
 ---
 
 Built with ❤️ using React, TypeScript, and modern web technologies.
-# tur-dataconversationprototype
