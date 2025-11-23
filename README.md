@@ -1,0 +1,271 @@
+# Conversational Analytics Demo
+
+A self-contained conversational analytics demo that showcases the future of data exploration through natural language. This project demonstrates how users can ask questions in plain English and receive intelligent insights with visualizations — all running entirely in the browser.
+
+![Conversational Analytics](https://img.shields.io/badge/React-18.2-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue) ![Vite](https://img.shields.io/badge/Vite-5.0-purple)
+
+## 🌟 Features
+
+- **Natural Language Queries**: Ask questions in plain English about your sales data
+- **Rule-Based Intelligence**: Smart pattern matching engine that detects intents and provides contextual insights
+- **Interactive Visualizations**: Automatic chart generation using Recharts for trend analysis
+- **100% Frontend**: No backend required — all data processing happens in the browser
+- **Modern UI**: Built with React, Tailwind CSS, and shadcn/ui components
+- **Dark Theme**: Sleek, professional interface optimized for readability
+
+## 🚀 Live Demo
+
+Visit the live demo: [https://yourusername.github.io/conversational-analytics-demo/](https://yourusername.github.io/conversational-analytics-demo/)
+
+## 📋 Example Questions
+
+Try asking:
+
+- "Why did sales drop in Germany last month?"
+- "Highlight anything unusual in the last 14 days"
+- "Show resellers down more than 20% YoY"
+- "What's the revenue trend over time?"
+
+## 🛠️ Tech Stack
+
+- **Framework**: React 18 + TypeScript
+- **Build Tool**: Vite 5
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Charts**: Recharts
+- **Icons**: Lucide React
+
+## 📦 Project Structure
+
+```
+conversational-analytics-demo/
+├── src/
+│   ├── components/
+│   │   ├── ui/          # shadcn/ui components (Button, Card, Input)
+│   │   ├── Chat.tsx     # Chat message display component
+│   │   └── ChartPanel.tsx  # Chart visualization component
+│   ├── data/
+│   │   └── sales.json   # Sample sales dataset
+│   ├── lib/
+│   │   └── utils.ts     # Utility functions (cn helper)
+│   ├── App.tsx          # Main application component
+│   ├── engine.ts        # Conversational engine with rule-based logic
+│   ├── main.tsx         # React entry point
+│   └── index.css        # Global styles with Tailwind
+├── index.html
+├── package.json
+├── vite.config.ts
+├── tailwind.config.js
+└── tsconfig.json
+```
+
+## 🏃 Getting Started
+
+### Prerequisites
+
+- Node.js 18+ and npm (or yarn/pnpm)
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/conversational-analytics-demo.git
+cd conversational-analytics-demo
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Start the development server:
+```bash
+npm run dev
+```
+
+4. Open your browser and navigate to `http://localhost:5173`
+
+## 🔧 Development
+
+### Running Locally
+
+```bash
+npm run dev
+```
+
+This starts the Vite development server with hot module replacement.
+
+### Building for Production
+
+```bash
+npm run build
+```
+
+This creates an optimized production build in the `dist/` directory.
+
+### Preview Production Build
+
+```bash
+npm run preview
+```
+
+This serves the production build locally for testing.
+
+## 🚢 Deploying to GitHub Pages
+
+### Option 1: Using GitHub Actions (Recommended)
+
+1. Create `.github/workflows/deploy.yml`:
+
+```yaml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
+```
+
+2. Enable GitHub Pages:
+   - Go to your repository Settings → Pages
+   - Set Source to "GitHub Actions"
+
+3. Push to main branch:
+```bash
+git add .
+git commit -m "Initial commit"
+git push origin main
+```
+
+The site will automatically deploy to `https://yourusername.github.io/conversational-analytics-demo/`
+
+### Option 2: Manual Deployment
+
+```bash
+# Build the project
+npm run build
+
+# Deploy to gh-pages branch using gh-pages package
+npm install -g gh-pages
+gh-pages -d dist
+```
+
+Then enable GitHub Pages in repository settings (Source: gh-pages branch).
+
+## 🧠 How It Works
+
+### The Conversational Engine
+
+The core logic is in `src/engine.ts`, which:
+
+1. **Pattern Matching**: Uses regex and keyword detection to identify user intent
+2. **Data Filtering**: Applies date ranges, segments, and country filters to the dataset
+3. **Aggregation**: Calculates totals, averages, and comparisons
+4. **Natural Language Generation**: Creates human-readable explanations
+5. **Chart Data**: Formats data for visualization
+
+Example intent detection:
+```typescript
+if (q.includes("germany") && q.includes("drop")) {
+  return analyzeGermanySalesDrop();
+}
+```
+
+### The Data Model
+
+Sample data in `src/data/sales.json`:
+```json
+{
+  "date": "2024-11-01",
+  "country": "Germany",
+  "segment": "Reseller",
+  "product": "Robotic mower",
+  "revenue": 25000,
+  "returns": 0.15
+}
+```
+
+### Extending the Engine
+
+To add new intents:
+
+1. Add pattern matching in `answerQuestion()`
+2. Create a new analysis function (e.g., `analyzeNewIntent()`)
+3. Filter and aggregate the data
+4. Return `InsightResult` with text and optional chartData
+
+## 🎨 Customization
+
+### Changing the Theme
+
+Edit `src/index.css` to modify the color scheme:
+```css
+:root {
+  --primary: 221.2 83.2% 53.3%;  /* Change primary color */
+  --background: 0 0% 100%;        /* Change background */
+}
+```
+
+### Adding New Data
+
+Replace `src/data/sales.json` with your own dataset. Keep the same structure or update the TypeScript types in `engine.ts`.
+
+### Styling Components
+
+All components use Tailwind CSS classes. Modify the `className` props to change styling.
+
+## 📝 License
+
+MIT License - feel free to use this project for learning or as a starting point for your own analytics tools.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 💡 Inspiration
+
+This project is inspired by the blog post *"Beyond dashboards: why the future of analytics is conversational"* which explores how conversational interfaces can make data more accessible and actionable.
+
+## 🙏 Acknowledgments
+
+- [shadcn/ui](https://ui.shadcn.com/) for beautiful React components
+- [Tailwind CSS](https://tailwindcss.com/) for utility-first styling
+- [Recharts](https://recharts.org/) for simple charting
+- [Vite](https://vitejs.dev/) for blazing fast development
+
+---
+
+Built with ❤️ using React, TypeScript, and modern web technologies.
