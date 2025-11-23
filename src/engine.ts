@@ -29,11 +29,6 @@ function parseDate(dateStr: string): Date {
   return new Date(dateStr);
 }
 
-// Helper function to get month name
-function getMonthName(date: Date): string {
-  return date.toLocaleDateString("en-US", { month: "long" });
-}
-
 // Helper function to filter data by date range
 function filterByDateRange(
   data: SalesRecord[],
