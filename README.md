@@ -269,3 +269,4 @@ This project is inspired by the blog post *"Beyond dashboards: why the future of
 ---
 
 Built with ❤️ using React, TypeScript, and modern web technologies.
+# tur-dataconversationprototype
